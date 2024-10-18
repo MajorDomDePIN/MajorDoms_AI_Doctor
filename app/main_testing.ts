@@ -1,6 +1,6 @@
 import { trackClaimedEvents } from './query_events';
 import * as readline from 'readline';
-import { sendToRagflow } from './ragflow_sender_test';
+import { sendToRagflow } from './ragflow_sender';
 import { ethers, JsonRpcProvider } from "ethers";
 import { groupings, ratings } from '@doitring/analyzkit';
 
@@ -35,6 +35,7 @@ function askForTokenId(transactions: Array<{ tokenId: string, content: string, t
                     content: JSON.parse(transaction.content)
                 };
             });
+            console.log(parsedTransactions)
             // Combine the data for sleeps, steps, heartRates, and oxygens
             const sleepData = parsedTransactions.flatMap(t => t.content.sleeps || []);
             console.log("sleepdata: ", sleepData);
@@ -42,12 +43,15 @@ function askForTokenId(transactions: Array<{ tokenId: string, content: string, t
             const heartRateData = parsedTransactions.flatMap(t => t.content.heartRates || []);
             const oxygenData = parsedTransactions.flatMap(t => t.content.oxygens || []);
 
+            // Set week start to ensure 7 days of data
             const today = new Date();
-            const yesterday = Math.floor(today.getTime() / 1000); // Current timestamp in seconds
-            console.log(yesterday);
+            const weekStart = new Date();
+            weekStart.setDate(today.getDate() - 6); // Set to 7 days ago
+            const weekStartTimestamp = Math.floor(weekStart.getTime() / 1000);
+            console.log(weekStartTimestamp);
 
             // Group the sleep data by week, but analyze each day individually
-            const weeklyGroupedSleepData = groupings.week(yesterday, sleepData);
+            const weeklyGroupedSleepData = groupings.week(weekStartTimestamp, sleepData);
             const dailySleepGroups = groupings.daily(weeklyGroupedSleepData);
 
             // Analyze sleep data for each day in the week
@@ -65,13 +69,13 @@ function askForTokenId(transactions: Array<{ tokenId: string, content: string, t
             });
 
             // Group the other data by week (unchanged)
-            const weeklyGroupedStepsData = groupings.week(yesterday, stepsData);
+            const weeklyGroupedStepsData = groupings.week(weekStartTimestamp, stepsData);
             const stepsAnalysis = ratings.steps(weeklyGroupedStepsData, 10000);  // Example target: 10,000 steps
 
-            const weeklyGroupedHeartRateData = groupings.week(yesterday, heartRateData);
+            const weeklyGroupedHeartRateData = groupings.week(weekStartTimestamp, heartRateData);
             const heartRateAnalysis = ratings.rates(weeklyGroupedHeartRateData);
 
-            const weeklyGroupedOxygenData = groupings.week(yesterday, oxygenData);
+            const weeklyGroupedOxygenData = groupings.week(weekStartTimestamp, oxygenData);
             const oxygenAnalysis = ratings.oxygens(weeklyGroupedOxygenData);
 
             // Add steps, heart rate, and oxygen data to the report

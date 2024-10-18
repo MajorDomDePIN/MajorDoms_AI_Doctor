@@ -5,8 +5,13 @@ const gRagUserId = "YourUserIdHere";
 const gRagApiToken = "ragflow-Q1N2EwYzdlODdkODExZWZhOTAxNDIwMT";
 
 // Function to send data to Ragflow
-export async function sendToRagflow(data: { tokenId: string, content: string, timestamp: string }) {
-    const question = `You are an AI analyzing health data. The data for tokenId ${data.tokenId} is "${data.content}". Please provide suggestions based on this data.`;
+export async function sendToRagflow(tokenId: string, data: string) {
+    // Create a detailed question with structured data         Sleep analysis: ${JSON.stringify(data.sleep)}.
+    const question = `You are a professional health advisor. I am the owner of token ID ${tokenId}.\n`
+        + `Based on the following health data from the past week, please provide personalized suggestions.\n`
+        + `Health Data start.\n${data}\nHealth Data stop. `;
+
+    console.log(`Q: ${question}`);
 
     try {
         // Create a new conversation
@@ -28,7 +33,7 @@ export async function sendToRagflow(data: { tokenId: string, content: string, ti
             messages: [
                 {
                     role: 'user',
-                    content: question // Send the content as part of the "messages"
+                    content: question // Send the structured data in the question
                 }
             ],
             quote: false,
